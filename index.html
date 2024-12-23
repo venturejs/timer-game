@@ -48,26 +48,12 @@
             width: 100%;
             margin: 10px 0;
             cursor: pointer;
-            transition: background 0.2s;
         }
         .button:active {
             background: #1a8ad4;
         }
         .button.stop {
             background: #ff3b30;
-        }
-        .button.stop:active {
-            background: #d63128;
-        }
-        .history {
-            margin-top: 20px;
-            text-align: left;
-        }
-        .history-item {
-            padding: 10px;
-            margin: 5px 0;
-            background: #f5f5f5;
-            border-radius: 8px;
         }
     </style>
 </head>
@@ -76,13 +62,10 @@
         <h1>10초 맞추기 게임</h1>
         <div class="time" id="timer">0.00</div>
         <div class="target">목표: <span>10초 (±0.1초)</span></div>
-        <div class="prize">현재 상금: <span id="prizePool">100</span>원</div>
+        <div class="prize">현재 상금: <span id="prizePool">0</span>원</div>
         <div class="fee">참가비: 100원</div>
-        <div id="controls">
-            <button class="button" id="startButton">게임 시작</button>
-            <button class="button stop" id="stopButton" style="display: none;">정지!</button>
-        </div>
-        <div id="gameHistory" class="history"></div>
+        <button class="button" id="startButton">게임 시작</button>
+        <button class="button stop" id="stopButton" style="display: none;">정지!</button>
     </div>
 
     <script>
@@ -90,59 +73,40 @@
         let isRunning = false;
         let startTime;
         let timerInterval;
-        let currentPrizePool = 100;
-
         const timer = document.getElementById('timer');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const prizePool = document.getElementById('prizePool');
-        const gameHistory = document.getElementById('gameHistory');
 
         // 초기화
         tg.ready();
         tg.expand();
 
-        // 페이지 로드 시 상태 요청
-        window.addEventListener('load', function() {
-            console.log('Requesting initial state');
-            tg.sendData(JSON.stringify({ type: 'getState' }));
-        });
+        // 초기 상태 요청
+        tg.sendData(JSON.stringify({ type: 'getState' }));
 
-        // 상금 풀 업데이트 함수
-        function updatePrizePool(amount) {
-            console.log('Updating prize pool to:', amount);
-            currentPrizePool = amount;
-            prizePool.textContent = amount.toLocaleString();
-        }
-
-        // 시작 버튼 클릭
-        startButton.addEventListener('click', function() {
+        startButton.addEventListener('click', () => {
             if (!isRunning) {
                 isRunning = true;
                 startTime = Date.now();
                 startButton.style.display = 'none';
                 stopButton.style.display = 'block';
 
-                // 게임 시작시 참가비 추가
-                tg.sendData(JSON.stringify({ 
-                    type: 'gameStart',
-                    entryFee: 100
-                }));
-
-                timerInterval = setInterval(function() {
+                timerInterval = setInterval(() => {
                     const elapsed = (Date.now() - startTime) / 1000;
                     timer.textContent = elapsed.toFixed(2);
                 }, 10);
+
+                // 게임 시작 알림
+                tg.sendData(JSON.stringify({ type: 'gameStart' }));
             }
         });
 
-        // 정지 버튼 클릭
-        stopButton.addEventListener('click', function() {
+        stopButton.addEventListener('click', () => {
             if (isRunning) {
                 isRunning = false;
                 clearInterval(timerInterval);
-                const endTime = Date.now();
-                const timePassed = (endTime - startTime) / 1000;
+                const timePassed = (Date.now() - startTime) / 1000;
                 const difference = Math.abs(10 - timePassed);
                 const accuracy = (100 - (difference * 10)).toFixed(2);
                 const isWinner = difference <= 0.1;
@@ -155,41 +119,23 @@
                     isWinner: isWinner
                 }));
 
-                startButton.textContent = '다시 도전하기';
                 startButton.style.display = 'block';
                 stopButton.style.display = 'none';
+                startButton.textContent = '다시 도전하기';
             }
         });
 
         // 봇으로부터 메시지 수신
         tg.onEvent('message', function(event) {
-            console.log('Received event:', event);
-            
             try {
                 const data = JSON.parse(event);
-                console.log('Parsed data:', data);
-                
                 if (data.type === 'updateState') {
-                    updatePrizePool(data.prizePool);
-                    if (data.history) {
-                        // 게임 기록 업데이트
-                        gameHistory.innerHTML = data.history.map(record => `
-                            <div class="history-item">
-                                <div class="history-name">${record.name}</div>
-                                <div class="history-record">
-                                    기록: ${record.time}초 (정확도: ${record.accuracy}%)
-                                    ${record.isWinner ? '🏆' : ''}
-                                </div>
-                            </div>
-                        `).join('');
-                    }
+                    prizePool.textContent = data.prizePool;
                 }
             } catch (error) {
                 console.error('Message processing error:', error);
             }
         });
-
-        console.log('Game initialized');
     </script>
 </body>
 </html>
