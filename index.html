@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10초 게임</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/telegram-webapps/7.0.0/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .info {
+            margin: 10px 0;
+            color: #666;
+        }
+        .target-time {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        .prize-pool {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        button.stop {
+            background: #f44336;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>10초 맞추기 게임</h1>
+        <div class="timer">0.00</div>
+        <div class="info">
+            목표: <span class="target-time">10.00초 (±0.1초)</span>
+        </div>
+        <div class="info">
+            현재 상금: <span class="prize-pool">100원</span>
+        </div>
+        <div class="info">참가비: 100원</div>
+        <button id="startBtn">게임 시작</button>
+        <button id="stopBtn" class="stop" style="display: none;">정지!</button>
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let startTime;
+        let timerInterval;
+        const timerDisplay = document.querySelector('.timer');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resultDiv = document.getElementById('result');
+
+        startBtn.addEventListener('click', startGame);
+        stopBtn.addEventListener('click', stopGame);
+
+        function startGame() {
+            isRunning = true;
+            startTime = Date.now();
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                timerDisplay.textContent = elapsed.toFixed(2);
+            }, 10);
+        }
+
+        function stopGame() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            const endTime = Date.now();
+            const timePassed = (endTime - startTime) / 1000;
+            const difference = Math.abs(10 - timePassed);
+            const accuracy = (100 - (difference * 10)).toFixed(2);
+            const isWinner = difference <= 0.1;
+
+            // 결과 표시
+            resultDiv.innerHTML = `
+                <h3>게임 결과</h3>
+                <p>기록: ${timePassed.toFixed(2)}초</p>
+                <p>정확도: ${accuracy}%</p>
+                ${isWinner ? '<p style="color: #4CAF50; font-weight: bold;">🎉 축하합니다! 승리!</p>' : 
+                           '<p style="color: #f44336;">아쉽네요! 다시 도전해보세요.</p>'}
+            `;
+            resultDiv.style.display = 'block';
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            startBtn.textContent = '다시 도전하기';
+
+            // 결과를 텔레그램으로 전송
+            if (window.Telegram.WebApp.initDataUnsafe.user) {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    time: timePassed.toFixed(2),
+                    accuracy: accuracy,
+                    isWinner: isWinner
+                }));
+            }
+        }
+
+        // 텔레그램 웹앱 초기화
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+    </script>
+</body>
+</html>
