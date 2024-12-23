@@ -85,6 +85,10 @@
         // 초기 상태 요청
         tg.sendData(JSON.stringify({ type: 'getState' }));
 
+        function updatePrizePool(prizeAmount) {
+            prizePool.textContent = prizeAmount;
+        }
+
         startButton.addEventListener('click', () => {
             if (!isRunning) {
                 isRunning = true;
@@ -125,15 +129,15 @@
             }
         });
 
-        // 봇으로부터 메시지 수신
-        tg.onEvent('message', function(event) {
+        // 데이터 수신 이벤트
+        tg.onEvent('dataReceived', (data) => {
             try {
-                const data = JSON.parse(event);
-                if (data.type === 'updateState') {
-                    prizePool.textContent = data.prizePool;
+                const parsedData = JSON.parse(data);
+                if (parsedData.type === 'updateState') {
+                    updatePrizePool(parsedData.prizePool);
                 }
             } catch (error) {
-                console.error('Message processing error:', error);
+                console.error('데이터 처리 오류:', error);
             }
         });
     </script>
