@@ -82,13 +82,6 @@
         tg.ready();
         tg.expand();
 
-        // 초기 상태 요청
-        tg.sendData(JSON.stringify({ type: 'getState' }));
-
-        function updatePrizePool(prizeAmount) {
-            prizePool.textContent = prizeAmount;
-        }
-
         startButton.addEventListener('click', () => {
             if (!isRunning) {
                 isRunning = true;
@@ -100,9 +93,6 @@
                     const elapsed = (Date.now() - startTime) / 1000;
                     timer.textContent = elapsed.toFixed(2);
                 }, 10);
-
-                // 게임 시작 알림
-                tg.sendData(JSON.stringify({ type: 'gameStart' }));
             }
         });
 
@@ -129,12 +119,12 @@
             }
         });
 
-        // 데이터 수신 이벤트
-        tg.onEvent('dataReceived', (data) => {
+        // 메시지 이벤트 리스너
+        window.addEventListener('message', (event) => {
             try {
-                const parsedData = JSON.parse(data);
-                if (parsedData.type === 'updateState') {
-                    updatePrizePool(parsedData.prizePool);
+                const data = JSON.parse(event.data);
+                if (data.type === 'updateState') {
+                    prizePool.textContent = data.prizePool;
                 }
             } catch (error) {
                 console.error('데이터 처리 오류:', error);
