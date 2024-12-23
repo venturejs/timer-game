@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>10초 게임</title>
+    <title>10초 맞추기 게임</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/telegram-webapps/7.0.0/telegram-web-app.js"></script>
     <style>
         body {
@@ -42,6 +42,10 @@
             color: #4CAF50;
             font-weight: bold;
         }
+        .entry-fee {
+            color: #666;
+            font-size: 14px;
+        }
         button {
             background: #2196F3;
             color: white;
@@ -65,32 +69,96 @@
             border-radius: 6px;
             background: #f8f9fa;
         }
+        .history-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .history-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .history-item {
+            padding: 10px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            margin-bottom: 8px;
+        }
+        .player-name {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .record-details {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>10초 맞추기 게임</h1>
-        <div class="timer">0.00</div>
+        <div class="timer" id="timer">0.00</div>
         <div class="info">
             목표: <span class="target-time">10.00초 (±0.1초)</span>
         </div>
         <div class="info">
-            현재 상금: <span class="prize-pool">100원</span>
+            현재 상금: <span class="prize-pool" id="prizePool">0</span>
         </div>
-        <div class="info">참가비: 100원</div>
-        <button id="startBtn">게임 시작</button>
-        <button id="stopBtn" class="stop" style="display: none;">정지!</button>
+        <div class="entry-fee">
+            참가비: 100원
+        </div>
+        <div id="controls">
+            <button id="startBtn">게임 시작</button>
+            <button id="stopBtn" class="stop" style="display: none;">정지!</button>
+        </div>
         <div id="result" class="result" style="display: none;"></div>
+        <div class="history-container">
+            <div class="history-title">게임 기록</div>
+            <div id="gameHistory"></div>
+        </div>
     </div>
 
     <script>
         let isRunning = false;
         let startTime;
         let timerInterval;
-        const timerDisplay = document.querySelector('.timer');
+        const timerDisplay = document.getElementById('timer');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const resultDiv = document.getElementById('result');
+        const prizePoolDisplay = document.getElementById('prizePool');
+        const gameHistoryDiv = document.getElementById('gameHistory');
+
+        // 게임 상태 초기화 및 요청
+        window.Telegram.WebApp.onEvent('viewportChanged', function() {
+            window.Telegram.WebApp.sendData(JSON.stringify({
+                type: 'getState'
+            }));
+        });
+
+        // 게임 상태 업데이트
+        function updateGameState(state) {
+            prizePoolDisplay.textContent = `${state.prizePool}원`;
+            
+            if (state.history && state.history.length > 0) {
+                gameHistoryDiv.innerHTML = state.history.map(record => `
+                    <div class="history-item">
+                        <div class="player-name">${record.name}</div>
+                        <div class="record-details">기록: ${record.time}초 (정확도: ${record.accuracy}%)</div>
+                    </div>
+                `).join('');
+            }
+        }
 
         startBtn.addEventListener('click', startGame);
         stopBtn.addEventListener('click', stopGame);
@@ -114,7 +182,7 @@
             const endTime = Date.now();
             const timePassed = (endTime - startTime) / 1000;
             const difference = Math.abs(10 - timePassed);
-            const accuracy = (100 - (difference * 10)).toFixed(2);
+            const accuracy = Math.max(0, 100 - (difference * 10)).toFixed(2);
             const isWinner = difference <= 0.1;
 
             // 결과 표시
@@ -131,18 +199,29 @@
             startBtn.textContent = '다시 도전하기';
 
             // 결과를 텔레그램으로 전송
-            if (window.Telegram.WebApp.initDataUnsafe.user) {
-                window.Telegram.WebApp.sendData(JSON.stringify({
-                    time: timePassed.toFixed(2),
-                    accuracy: accuracy,
-                    isWinner: isWinner
-                }));
-            }
+            window.Telegram.WebApp.sendData(JSON.stringify({
+                type: 'gameResult',
+                time: timePassed.toFixed(2),
+                accuracy: accuracy,
+                isWinner: isWinner
+            }));
         }
 
         // 텔레그램 웹앱 초기화
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
+
+        // 메시지 수신 처리
+        window.Telegram.WebApp.onEvent('message', function(message) {
+            try {
+                const data = JSON.parse(message);
+                if (data.type === 'gameState') {
+                    updateGameState(data);
+                }
+            } catch (error) {
+                console.error('Message processing error:', error);
+            }
+        });
     </script>
 </body>
 </html>
