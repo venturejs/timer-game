@@ -48,8 +48,7 @@
             width: 100%;
             margin: 10px 0;
             cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            transition: background 0.2s;
         }
         .button:active {
             background: #1a8ad4;
@@ -59,6 +58,16 @@
         }
         .button.stop:active {
             background: #d63128;
+        }
+        .history {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .history-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f5f5f5;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -73,7 +82,7 @@
             <button class="button" id="startButton">게임 시작</button>
             <button class="button stop" id="stopButton" style="display: none;">정지!</button>
         </div>
-        <div id="gameHistory"></div>
+        <div id="gameHistory" class="history"></div>
     </div>
 
     <script>
@@ -81,17 +90,28 @@
         let isRunning = false;
         let startTime;
         let timerInterval;
+        let currentPrizePool = 0;
 
         const timer = document.getElementById('timer');
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const prizePool = document.getElementById('prizePool');
+        const gameHistory = document.getElementById('gameHistory');
 
-        // 텔레그램 WebApp 초기화
+        // 초기화
         tg.ready();
         tg.expand();
 
-        // 시작 버튼 클릭 이벤트
+        // 상금 풀 업데이트 함수
+        function updatePrizePool(amount) {
+            currentPrizePool = amount;
+            prizePool.textContent = amount.toLocaleString();
+        }
+
+        // 상태 요청
+        tg.sendData(JSON.stringify({ type: 'getState' }));
+
+        // 시작 버튼 클릭
         startButton.addEventListener('click', function() {
             if (!isRunning) {
                 isRunning = true;
@@ -99,18 +119,20 @@
                 startButton.style.display = 'none';
                 stopButton.style.display = 'block';
 
-                // 타이머 시작
+                // 게임 시작시 참가비 추가
+                tg.sendData(JSON.stringify({ 
+                    type: 'gameStart',
+                    entryFee: 100
+                }));
+
                 timerInterval = setInterval(function() {
                     const elapsed = (Date.now() - startTime) / 1000;
                     timer.textContent = elapsed.toFixed(2);
                 }, 10);
-
-                // 게임 시작 알림
-                tg.sendData(JSON.stringify({ type: 'gameStart' }));
             }
         });
 
-        // 정지 버튼 클릭 이벤트
+        // 정지 버튼 클릭
         stopButton.addEventListener('click', function() {
             if (isRunning) {
                 isRunning = false;
@@ -121,7 +143,7 @@
                 const accuracy = (100 - (difference * 10)).toFixed(2);
                 const isWinner = difference <= 0.1;
 
-                // 결과 전송
+                // 게임 결과 전송
                 tg.sendData(JSON.stringify({
                     type: 'gameEnd',
                     time: timePassed.toFixed(2),
@@ -135,9 +157,19 @@
             }
         });
 
-        // 웹앱 이벤트
-        tg.onEvent('viewportChanged', function() {
-            tg.sendData(JSON.stringify({ type: 'getState' }));
+        // 봇으로부터 메시지 수신
+        tg.onEvent('message', function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'updateState') {
+                    updatePrizePool(data.prizePool);
+                    if (data.history) {
+                        updateHistory(data.history);
+                    }
+                }
+            } catch (error) {
+                console.error('Message processing error:', error);
+            }
         });
     </script>
 </body>
