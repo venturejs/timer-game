@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TON Timer Game</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/telegram-webapps/7.0.0/telegram-web-app.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 16px;
             background: #fff;
+            color: var(--tg-theme-text-color, #000);
         }
         .game-container {
             width: 100%;
@@ -18,76 +19,39 @@
             margin: 0 auto;
             text-align: center;
         }
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
         .timer {
             font-size: 72px;
             font-weight: bold;
             margin: 20px 0;
         }
         .info {
-            margin: 8px 0;
+            margin: 10px 0;
             font-size: 16px;
         }
         .target {
-            color: #2196F3;
-            font-weight: 500;
+            color: var(--tg-theme-link-color, #2196F3);
         }
         .prize {
-            color: #4CAF50;
-            font-weight: 500;
+            color: var(--tg-theme-button-color, #4CAF50);
         }
-        .button {
-            background: #27A7E7;
-            color: white;
+        button {
+            background: var(--tg-theme-button-color, #2196F3);
+            color: var(--tg-theme-button-text-color, #fff);
             border: none;
-            padding: 12px;
+            padding: 12px 24px;
             border-radius: 8px;
             font-size: 16px;
+            margin: 8px 0;
             width: 100%;
-            margin-top: 20px;
             cursor: pointer;
         }
-        .button.stop {
+        button.stop {
             background: #ff3b30;
-        }
-        .history {
-            margin-top: 24px;
-            text-align: left;
-            border-top: 1px solid #eee;
-            padding-top: 16px;
-        }
-        .history-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-        .history-item {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        .history-name {
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        .history-record {
-            color: #666;
-            font-size: 14px;
-        }
-        .winner {
-            border-left: 4px solid #4CAF50;
-            padding-left: 8px;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <div class="title">10초 맞추기 게임</div>
         <div class="timer" id="timer">0.00</div>
         <div class="info">
             목표: <span class="target">10초 (±0.1초)</span>
@@ -98,46 +62,40 @@
         <div class="info">
             참가비: 100원
         </div>
-        <button class="button" id="startBtn">게임 시작</button>
-        <button class="button stop" id="stopBtn" style="display: none;">정지!</button>
-        
-        <div class="history">
-            <div class="history-title">게임 기록</div>
-            <div id="history"></div>
-        </div>
+        <button id="startBtn" onclick="startGame()">게임 시작</button>
+        <button id="stopBtn" onclick="stopGame()" class="stop" style="display: none;">정지!</button>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
         let isRunning = false;
         let startTime;
         let timerInterval;
+        const tg = window.Telegram.WebApp;
 
+        // UI 요소
         const timerDisplay = document.getElementById('timer');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const prizePoolDisplay = document.getElementById('prizePool');
-        const historyContainer = document.getElementById('history');
 
+        // 초기화
         tg.ready();
         tg.expand();
 
-        // 초기 상태 요청
-        tg.sendData(JSON.stringify({ type: 'requestState' }));
-
-        startBtn.addEventListener('click', startGame);
-        stopBtn.addEventListener('click', stopGame);
+        // MainButton 설정
+        tg.MainButton.setText('상태 업데이트').onClick(() => {
+            tg.sendData(JSON.stringify({ type: 'getState' }));
+        });
 
         function startGame() {
             isRunning = true;
             startTime = Date.now();
             startBtn.style.display = 'none';
             stopBtn.style.display = 'block';
+            tg.MainButton.hide();
 
             // 게임 시작 알림
-            tg.sendData(JSON.stringify({ 
-                type: 'gameStart'
-            }));
+            tg.sendData(JSON.stringify({ type: 'gameStart' }));
 
             timerInterval = setInterval(() => {
                 const elapsed = (Date.now() - startTime) / 1000;
@@ -148,12 +106,13 @@
         function stopGame() {
             isRunning = false;
             clearInterval(timerInterval);
-            const timePassed = (Date.now() - startTime) / 1000;
+            const endTime = Date.now();
+            const timePassed = (endTime - startTime) / 1000;
             const difference = Math.abs(10 - timePassed);
             const accuracy = (100 - (difference * 10)).toFixed(2);
             const isWinner = difference <= 0.1;
 
-            // 게임 결과 전송
+            // 결과 전송
             tg.sendData(JSON.stringify({
                 type: 'gameEnd',
                 time: timePassed.toFixed(2),
@@ -163,39 +122,17 @@
 
             startBtn.style.display = 'block';
             stopBtn.style.display = 'none';
-            startBtn.textContent = '다시 도전하기';
+            tg.MainButton.show();
         }
 
-        function updateGameState(data) {
-            // 상금 풀 업데이트
-            prizePoolDisplay.textContent = data.prizePool.toLocaleString();
+        // 이벤트 핸들러
+        tg.onEvent('viewportChanged', () => {
+            tg.sendData(JSON.stringify({ type: 'getState' }));
+        });
 
-            // 게임 기록 업데이트
-            if (data.history && data.history.length > 0) {
-                historyContainer.innerHTML = data.history.map(record => `
-                    <div class="history-item ${record.isWinner ? 'winner' : ''}">
-                        <div class="history-name">${record.name}</div>
-                        <div class="history-record">
-                            기록: ${record.time}초 (정확도: ${record.accuracy}%)
-                            ${record.isWinner ? ' 🏆' : ''}
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
-
-        // WebApp 메시지 처리
-        tg.onEvent('message', function(event) {
-            if (typeof event === 'string') {
-                try {
-                    const data = JSON.parse(event);
-                    if (data.type === 'gameState') {
-                        updateGameState(data);
-                    }
-                } catch (error) {
-                    console.error('Message processing error:', error);
-                }
-            }
+        // 봇으로부터 상태 업데이트 수신
+        tg.onEvent('mainButtonClicked', () => {
+            tg.sendData(JSON.stringify({ type: 'getState' }));
         });
     </script>
 </body>
