@@ -76,7 +76,7 @@
         <h1>10초 맞추기 게임</h1>
         <div class="time" id="timer">0.00</div>
         <div class="target">목표: <span>10초 (±0.1초)</span></div>
-        <div class="prize">현재 상금: <span id="prizePool">0</span>원</div>
+        <div class="prize">현재 상금: <span id="prizePool">100</span>원</div>
         <div class="fee">참가비: 100원</div>
         <div id="controls">
             <button class="button" id="startButton">게임 시작</button>
@@ -90,7 +90,7 @@
         let isRunning = false;
         let startTime;
         let timerInterval;
-        let currentPrizePool = 0;
+        let currentPrizePool = 100;
 
         const timer = document.getElementById('timer');
         const startButton = document.getElementById('startButton');
@@ -102,14 +102,18 @@
         tg.ready();
         tg.expand();
 
+        // 페이지 로드 시 상태 요청
+        window.addEventListener('load', function() {
+            console.log('Requesting initial state');
+            tg.sendData(JSON.stringify({ type: 'getState' }));
+        });
+
         // 상금 풀 업데이트 함수
         function updatePrizePool(amount) {
+            console.log('Updating prize pool to:', amount);
             currentPrizePool = amount;
             prizePool.textContent = amount.toLocaleString();
         }
-
-        // 상태 요청
-        tg.sendData(JSON.stringify({ type: 'getState' }));
 
         // 시작 버튼 클릭
         startButton.addEventListener('click', function() {
@@ -159,18 +163,33 @@
 
         // 봇으로부터 메시지 수신
         tg.onEvent('message', function(event) {
+            console.log('Received event:', event);
+            
             try {
-                const data = JSON.parse(event.data);
+                const data = JSON.parse(event);
+                console.log('Parsed data:', data);
+                
                 if (data.type === 'updateState') {
                     updatePrizePool(data.prizePool);
                     if (data.history) {
-                        updateHistory(data.history);
+                        // 게임 기록 업데이트
+                        gameHistory.innerHTML = data.history.map(record => `
+                            <div class="history-item">
+                                <div class="history-name">${record.name}</div>
+                                <div class="history-record">
+                                    기록: ${record.time}초 (정확도: ${record.accuracy}%)
+                                    ${record.isWinner ? '🏆' : ''}
+                                </div>
+                            </div>
+                        `).join('');
                     }
                 }
             } catch (error) {
                 console.error('Message processing error:', error);
             }
         });
+
+        console.log('Game initialized');
     </script>
 </body>
 </html>
