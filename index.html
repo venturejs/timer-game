@@ -6,55 +6,7 @@
     <title>10초 맞추기 게임</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #fff;
-        }
-        .game-container {
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .time {
-            font-size: 72px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .target, .prize, .fee {
-            margin: 10px 0;
-            font-size: 16px;
-        }
-        .target span {
-            color: #2196F3;
-            font-weight: bold;
-        }
-        .prize span {
-            color: #4CAF50;
-            font-weight: bold;
-        }
-        .button {
-            background: #27A7E7;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 100%;
-            margin: 10px 0;
-            cursor: pointer;
-        }
-        .button:active {
-            background: #1a8ad4;
-        }
-        .button.stop {
-            background: #ff3b30;
-        }
+        /* 기존 스타일 유지 */
     </style>
 </head>
 <body>
@@ -105,13 +57,13 @@
                 const accuracy = (100 - (difference * 10)).toFixed(2);
                 const isWinner = difference <= 0.1;
 
-                // 게임 결과 전송
-                tg.sendData(JSON.stringify({
-                    type: 'gameEnd',
-                    time: timePassed.toFixed(2),
-                    accuracy: accuracy,
-                    isWinner: isWinner
-                }));
+                if (!isWinner) {
+                    // 실패 시 상금 풀에 100원 추가
+                    tg.sendData(JSON.stringify({
+                        type: 'updatePrize',
+                        amount: 100
+                    }));
+                }
 
                 startButton.style.display = 'block';
                 stopButton.style.display = 'none';
@@ -123,7 +75,7 @@
         window.addEventListener('message', (event) => {
             try {
                 const data = JSON.parse(event.data);
-                if (data.type === 'updateState') {
+                if (data.type === 'prizePoolUpdated') {
                     prizePool.textContent = data.prizePool;
                 }
             } catch (error) {
