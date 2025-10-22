@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투자 게임 - 머피의 법칙</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .balance {
+            color: #667eea;
+        }
+
+        .profit {
+            color: #28a745;
+        }
+
+        .profit.negative {
+            color: #dc3545;
+        }
+
+        .chart-container {
+            height: 250px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .price-display {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .position-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border: 2px solid #ffc107;
+        }
+
+        .position-info.long {
+            background: #d1ecf1;
+            border-color: #0dcaf0;
+        }
+
+        .position-info.short {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .position-info.none {
+            display: none;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-long {
+            background: #0dcaf0;
+            color: white;
+        }
+
+        .btn-short {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-close {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .message.show {
+            opacity: 1;
+        }
+
+        .message.win {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .message.lose {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 투자 게임</h1>
+        <div class="subtitle">머피의 법칙 체험판</div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">잔고</div>
+                <div class="stat-value balance" id="balance">$10,000</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">수익</div>
+                <div class="stat-value profit" id="profit">$0</div>
+            </div>
+        </div>
+
+        <div class="price-display" id="price">$100.00</div>
+
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="position-info none" id="positionInfo">
+            포지션 없음
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="buttons">
+            <button class="btn-long" id="btnLong">📈 롱 (매수)</button>
+            <button class="btn-short" id="btnShort">📉 숏 (매도)</button>
+        </div>
+
+        <div class="buttons">
+            <button class="btn-close" id="btnClose" disabled>포지션 청산</button>
+            <button class="btn-reset" id="btnReset">게임 리셋</button>
+        </div>
+    </div>
+
+    <script>
+        // 게임 상태
+        let balance = 10000;
+        let initialBalance = 10000;
+        let currentPrice = 100;
+        let position = null; // 'long' or 'short'
+        let entryPrice = 0;
+        let priceHistory = [100];
+        let maxHistory = 50;
+
+        // DOM 요소
+        const balanceEl = document.getElementById('balance');
+        const profitEl = document.getElementById('profit');
+        const priceEl = document.getElementById('price');
+        const positionInfoEl = document.getElementById('positionInfo');
+        const messageEl = document.getElementById('message');
+        const btnLong = document.getElementById('btnLong');
+        const btnShort = document.getElementById('btnShort');
+        const btnClose = document.getElementById('btnClose');
+        const btnReset = document.getElementById('btnReset');
+        const canvas = document.getElementById('chart');
+        const ctx = canvas.getContext('2d');
+
+        // 캔버스 크기 설정
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 차트 그리기
+        function drawChart() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (priceHistory.length < 2) return;
+
+            const padding = 20;
+            const width = canvas.width - padding * 2;
+            const height = canvas.height - padding * 2;
+            
+            const minPrice = Math.min(...priceHistory);
+            const maxPrice = Math.max(...priceHistory);
+            const priceRange = maxPrice - minPrice || 1;
+
+            // 선 그리기
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            priceHistory.forEach((price, index) => {
+                const x = padding + (index / (priceHistory.length - 1)) * width;
+                const y = padding + height - ((price - minPrice) / priceRange) * height;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // 마지막 점 표시
+            const lastX = padding + width;
+            const lastY = padding + height - ((priceHistory[priceHistory.length - 1] - minPrice) / priceRange) * height;
+            ctx.fillStyle = '#667eea';
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 가격 업데이트
+        function updatePrice() {
+            if (position === 'long') {
+                // 롱 포지션이면 가격 하락
+                currentPrice -= Math.random() * 3 + 1;
+            } else if (position === 'short') {
+                // 숏 포지션이면 가격 상승
+                currentPrice += Math.random() * 3 + 1;
+            } else {
+                // 포지션 없으면 랜덤
+                currentPrice += (Math.random() - 0.5) * 2;
+            }
+
+            currentPrice = Math.max(10, currentPrice); // 최소 가격
+            priceHistory.push(currentPrice);
+            
+            if (priceHistory.length > maxHistory) {
+                priceHistory.shift();
+            }
+
+            priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+            drawChart();
+            updateProfit();
+        }
+
+        // 수익 업데이트
+        function updateProfit() {
+            if (!position) {
+                profitEl.textContent = '$0';
+                profitEl.className = 'stat-value profit';
+                return;
+            }
+
+            let pnl = 0;
+            if (position === 'long') {
+                pnl = ((currentPrice - entryPrice) / entryPrice) * balance;
+            } else if (position === 'short') {
+                pnl = ((entryPrice - currentPrice) / entryPrice) * balance;
+            }
+
+            profitEl.textContent = `$${pnl.toFixed(2)}`;
+            profitEl.className = 'stat-value profit' + (pnl < 0 ? ' negative' : '');
+        }
+
+        // 메시지 표시
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // 롱 포지션 진입
+        btnLong.addEventListener('click', () => {
+            position = 'long';
+            entryPrice = currentPrice;
+            positionInfoEl.textContent = `📈 롱 포지션 진입: $${entryPrice.toFixed(2)}`;
+            positionInfoEl.className = 'position-info long';
+            btnLong.disabled = true;
+            btnShort.disabled = true;
+            btnClose.disabled = false;
+            showMessage('롱 포지션 진입! 하락 시작...', 'lose');
+        });
+
+        // 숏 포지션 진입
+        btnShort.addEventListener('click', () => {
+            position = 'short';
+            entryPrice = currentPrice;
+            positionInfoEl.textContent = `📉 숏 포지션 진입: $${entryPrice.toFixed(2)}`;
+            positionInfoEl.className = 'position-info short';
+            btnLong.disabled = true;
+            btnShort.disabled = true;
+            btnClose.disabled = false;
+            showMessage('숏 포지션 진입! 상승 시작...', 'lose');
+        });
+
+        // 포지션 청산
+        btnClose.addEventListener('click', () => {
+            let pnl = 0;
+            if (position === 'long') {
+                pnl = ((currentPrice - entryPrice) / entryPrice) * balance;
+            } else if (position === 'short') {
+                pnl = ((entryPrice - currentPrice) / entryPrice) * balance;
+            }
+
+            balance += pnl;
+            balanceEl.textContent = `$${balance.toFixed(2)}`;
+
+            if (pnl > 0) {
+                showMessage(`청산! +$${pnl.toFixed(2)} 수익!`, 'win');
+            } else {
+                showMessage(`청산! $${pnl.toFixed(2)} 손실...`, 'lose');
+            }
+
+            position = null;
+            entryPrice = 0;
+            positionInfoEl.className = 'position-info none';
+            btnLong.disabled = false;
+            btnShort.disabled = false;
+            btnClose.disabled = true;
+            profitEl.textContent = '$0';
+            profitEl.className = 'stat-value profit';
+        });
+
+        // 게임 리셋
+        btnReset.addEventListener('click', () => {
+            balance = initialBalance;
+            currentPrice = 100;
+            position = null;
+            entryPrice = 0;
+            priceHistory = [100];
+            
+            balanceEl.textContent = `$${balance.toFixed(2)}`;
+            profitEl.textContent = '$0';
+            profitEl.className = 'stat-value profit';
+            priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+            positionInfoEl.className = 'position-info none';
+            
+            btnLong.disabled = false;
+            btnShort.disabled = false;
+            btnClose.disabled = true;
+            
+            drawChart();
+            showMessage('게임이 리셋되었습니다!', 'win');
+        });
+
+        // 게임 루프
+        setInterval(updatePrice, 500);
+
+        // 초기 차트 그리기
+        drawChart();
+    </script>
+</body>
+</html>
