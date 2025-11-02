@@ -2306,11 +2306,23 @@
             });
             
             // UI 업데이트
-            document.getElementById('currentScore').textContent = stats.current.toFixed(1);
+            const color = stats.currentScore >= 7 ? '#10B981' : stats.currentScore >= 5 ? '#3B82F6' : '#EF4444';
+            
+            document.getElementById('currentScore').textContent = stats.currentScore.toFixed(1);
             document.getElementById('currentScore').style.color = color;
-            document.getElementById('lastUpdate').textContent = updateInfo.lastUpdateText;
-            document.getElementById('updateCount').textContent = `${updateInfo.updateCount} times`;
-            document.getElementById('avgCycle').textContent = `${updateInfo.avgCycle} days`;
+            
+            // 마지막 업데이트 날짜 포맷
+            if (stats.lastUpdate !== 'N/A') {
+                const [y, m, d] = stats.lastUpdate.split('-');
+                const dateObj = new Date(y, m - 1, d);
+                const options = { month: 'short', day: 'numeric' };
+                document.getElementById('lastUpdate').textContent = dateObj.toLocaleDateString('en-US', options);
+            } else {
+                document.getElementById('lastUpdate').textContent = 'N/A';
+            }
+            
+            document.getElementById('updateCount').textContent = `${stats.updateCount} times`;
+            document.getElementById('avgCycle').textContent = `${stats.avgCycle} days`;
             
             document.getElementById('statMean').textContent = stats.mean.toFixed(1);
             document.getElementById('statStd').textContent = stats.std.toFixed(1);
