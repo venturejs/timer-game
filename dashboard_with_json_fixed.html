@@ -1596,6 +1596,8 @@
         let chart;
         let currentSector = 'semiconductors';
         let currentPeriod = '30d';
+        let currentSectorsData = []; // 현재 로드된 섹터 데이터 저장
+        let currentDisplayDate = new Date('2025-10-31'); // 초기 날짜
         
         // Mock JSON data - 실제로는 API에서 가져올 데이터
         const sectorData = {
@@ -2318,8 +2320,6 @@
             document.getElementById('statMin').textContent = stats.min.toFixed(1);
         }
         
-        let currentSectorsData = []; // 현재 로드된 섹터 데이터 저장
-        
         function updateSectorChart() {
             const sectorValue = document.getElementById('sectorSelect').value;
             currentSector = sectorValue;
@@ -2374,8 +2374,6 @@
             btn.classList.add('active');
             createSectorChart(currentSector, period);
         }
-        
-        let currentDisplayDate = new Date('2025-10-31'); // 초기 날짜
         
         async function changeDate(days) {
             const el = document.getElementById('currentDate');
