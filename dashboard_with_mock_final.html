@@ -2072,7 +2072,7 @@
                     
                     try {
                         // JSON 파일 존재 여부 확인
-                        const response = await fetch(`data_${dateStr}.json`, { method: 'HEAD' });
+                        const response = await fetch(`json_output/data_${dateStr}.json`, { method: 'HEAD' });
                         if (response.ok) {
                             latestDate = dateStr;
                             break;
@@ -2104,7 +2104,7 @@
         async function loadSectorTable(dateStr) {
             try {
                 // JSON 파일 로드 시도
-                const response = await fetch(`data_${dateStr}.json`);
+                const response = await fetch(`json_output/data_${dateStr}.json`);
                 if (!response.ok) {
                     console.log('JSON file not found, using sample data');
                     loadSampleSectorData();
