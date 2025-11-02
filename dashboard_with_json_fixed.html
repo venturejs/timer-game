@@ -2075,11 +2075,22 @@
                 };
                 
                 const selectedSectorName = sectorNameMap[sectorValue];
+                console.log('Selected sector value:', sectorValue);
+                console.log('Mapped sector name:', selectedSectorName);
+                console.log('Available sectors:', currentSectorsData.map(s => s.name_en));
+                
                 const selectedSector = currentSectorsData.find(s => s.name_en === selectedSectorName);
                 
                 if (selectedSector) {
+                    console.log('Found sector data:', selectedSector);
                     updateSectorDetail(selectedSector);
+                } else {
+                    console.warn('Sector not found:', selectedSectorName);
                 }
+            } else {
+                console.warn('No sectors data loaded');
+            }
+        }
             }
         }
         
