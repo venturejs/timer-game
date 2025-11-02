@@ -1527,19 +1527,19 @@
                     <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-secondary);">Performance vs Benchmark</div>
                     <div class="insight-row" style="padding: 12px 0;">
                         <div class="insight-label">1 Day</div>
-                        <div class="insight-value positive">+0.8%</div>
+                        <div class="insight-value positive" id="detailPerf1d">+0.8%</div>
                     </div>
                     <div class="insight-row" style="padding: 12px 0;">
                         <div class="insight-label">1 Week</div>
-                        <div class="insight-value positive">+2.1%</div>
+                        <div class="insight-value positive" id="detailPerf1w">+2.1%</div>
                     </div>
                     <div class="insight-row" style="padding: 12px 0;">
                         <div class="insight-label">1 Month</div>
-                        <div class="insight-value positive">+5.4%</div>
+                        <div class="insight-value positive" id="detailPerf1m">+5.4%</div>
                     </div>
                     <div class="insight-row" style="padding: 12px 0;">
                         <div class="insight-label">YTD</div>
-                        <div class="insight-value positive"><strong>+12.8%</strong></div>
+                        <div class="insight-value positive" id="detailPerfYtd"><strong>+12.8%</strong></div>
                     </div>
                 </div>
                 
@@ -2042,10 +2042,45 @@
             document.getElementById('statMin').textContent = stats.min.toFixed(1);
         }
         
+        let currentSectorsData = []; // 현재 로드된 섹터 데이터 저장
+        
         function updateSectorChart() {
-            const sector = document.getElementById('sectorSelect').value;
-            currentSector = sector;
-            createSectorChart(sector, currentPeriod);
+            const sectorValue = document.getElementById('sectorSelect').value;
+            currentSector = sectorValue;
+            createSectorChart(sectorValue, currentPeriod);
+            
+            // 선택된 섹터의 데이터로 우측 패널 업데이트
+            if (currentSectorsData.length > 0) {
+                // 섹터 매핑 (드롭다운 value -> 섹터명)
+                const sectorNameMap = {
+                    'semiconductors': 'Semiconductors',
+                    'shipbuilding': 'Shipbuilding',
+                    'defense': 'Defense Equip',
+                    'cosmetics': 'Cosmetics',
+                    'financials': 'Financials',
+                    'automobiles': 'Automobiles',
+                    'entertainment': 'Entertainment',
+                    'biotech': 'Biotech & Pharm',
+                    'medical': 'Medical Equip',
+                    'gaming': 'Gaming',
+                    'batteries': 'Batteries',
+                    'software': 'Software',
+                    'renewable': 'Renewable Ener',
+                    'nuclear': 'Nuclear Power',
+                    'telecom': 'Telecom',
+                    'construction': 'Construction',
+                    'consumer': 'Consumer Goods',
+                    'display': 'Display Tech',
+                    'holding': 'Holding Co'
+                };
+                
+                const selectedSectorName = sectorNameMap[sectorValue];
+                const selectedSector = currentSectorsData.find(s => s.name_en === selectedSectorName);
+                
+                if (selectedSector) {
+                    updateSectorDetail(selectedSector);
+                }
+            }
         }
         
         function setPeriodView(period, btn) {
@@ -2057,22 +2092,40 @@
         
         let currentDisplayDate = new Date('2025-10-31'); // 초기 날짜
         
-        function changeDate(days) {
+        async function changeDate(days) {
             const el = document.getElementById('currentDate');
-            currentDisplayDate.setDate(currentDisplayDate.getDate() + days);
+            const originalDate = new Date(currentDisplayDate);
             
-            // 날짜를 YYYY-MM-DD 형식으로 변환
-            const year = currentDisplayDate.getFullYear();
-            const month = String(currentDisplayDate.getMonth() + 1).padStart(2, '0');
-            const day = String(currentDisplayDate.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+            // 최대 30일까지 찾아봄
+            for (let attempt = 0; attempt < 30; attempt++) {
+                currentDisplayDate.setDate(currentDisplayDate.getDate() + days);
+                
+                // 날짜를 YYYY-MM-DD 형식으로 변환
+                const year = currentDisplayDate.getFullYear();
+                const month = String(currentDisplayDate.getMonth() + 1).padStart(2, '0');
+                const day = String(currentDisplayDate.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                
+                // JSON 파일 존재 확인
+                try {
+                    const response = await fetch(`json_output/data_${dateStr}.json`, { method: 'HEAD' });
+                    if (response.ok) {
+                        // JSON 파일이 있으면 UI 업데이트
+                        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                        el.textContent = currentDisplayDate.toLocaleDateString('en-US', options);
+                        
+                        // 해당 날짜의 JSON 로드
+                        loadSectorTable(dateStr);
+                        return; // 성공하면 종료
+                    }
+                } catch (e) {
+                    // 파일이 없으면 계속 탐색
+                }
+            }
             
-            // UI 업데이트
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            el.textContent = currentDisplayDate.toLocaleDateString('en-US', options);
-            
-            // 해당 날짜의 JSON 로드
-            loadSectorTable(dateStr);
+            // 30일 동안 찾지 못하면 원래 날짜로 복구
+            currentDisplayDate = originalDate;
+            alert('더 이상 데이터가 없습니다.');
         }
         
         function openCalendar() {
@@ -2143,6 +2196,9 @@
                     .filter(s => s.final_score && s.final_score > 0)
                     .sort((a, b) => (b.final_score || 0) - (a.final_score || 0));
                 
+                // 전역 변수에 저장
+                currentSectorsData = validSectors;
+                
                 // 테이블 제목 업데이트
                 document.getElementById('sectorTableTitle').textContent = 
                     `Complete Sector Analysis (${validSectors.length} Sectors)`;
@@ -2156,10 +2212,50 @@
                     tbody.appendChild(row);
                 });
                 
+                // 우측 패널 업데이트 (첫 번째 섹터 또는 현재 선택된 섹터)
+                if (validSectors.length > 0) {
+                    updateSectorDetail(validSectors[0]);
+                }
+                
             } catch (error) {
                 console.error('Error loading sector table:', error);
                 loadSampleSectorData();
             }
+        }
+        
+        // 우측 패널 섹터 상세 정보 업데이트
+        function updateSectorDetail(sector) {
+            // Performance 수익률 업데이트
+            const perf1d = sector.perf_1d || 0;
+            const perf1w = sector.perf_1w || 0;
+            const perf1m = sector.perf_1m || 0;
+            const ytd = sector.ytd || 0;
+            
+            document.getElementById('detailPerf1d').textContent = formatPerf(perf1d);
+            document.getElementById('detailPerf1d').className = `insight-value ${perf1d >= 0 ? 'positive' : 'negative'}`;
+            
+            document.getElementById('detailPerf1w').textContent = formatPerf(perf1w);
+            document.getElementById('detailPerf1w').className = `insight-value ${perf1w >= 0 ? 'positive' : 'negative'}`;
+            
+            document.getElementById('detailPerf1m').textContent = formatPerf(perf1m);
+            document.getElementById('detailPerf1m').className = `insight-value ${perf1m >= 0 ? 'positive' : 'negative'}`;
+            
+            document.getElementById('detailPerfYtd').innerHTML = `<strong>${formatPerf(ytd)}</strong>`;
+            document.getElementById('detailPerfYtd').className = `insight-value ${ytd >= 0 ? 'positive' : 'negative'}`;
+            
+            // 섹터명 업데이트
+            document.getElementById('sectorDetailTitle').textContent = sector.name_en || 'Sector';
+            
+            // 스코어 업데이트
+            const score = sector.final_score || 0;
+            document.getElementById('detailScore').textContent = score.toFixed(1);
+            
+            // Sentiment & Fundamental 업데이트 (평균 사용)
+            const sentimentAvg = ((sector.sentiment_score_1 || 0) + (sector.sentiment_score_2 || 0) + (sector.sentiment_score_3 || 0)) / 3;
+            const fundamentalAvg = ((sector.fundamental_score_1 || 0) + (sector.fundamental_score_2 || 0) + (sector.fundamental_score_3 || 0)) / 3;
+            
+            document.getElementById('detailSentiment').textContent = sentimentAvg.toFixed(1);
+            document.getElementById('detailFundamental').textContent = fundamentalAvg.toFixed(1);
         }
         
         // 섹터 행 생성 함수
