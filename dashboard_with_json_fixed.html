@@ -2243,8 +2243,9 @@
         
         function formatPerf(value) {
             if (!value && value !== 0) return 'N/A';
-            const sign = value >= 0 ? '+' : '';
-            return `${sign}${value.toFixed(1)}%`;
+            const percentage = value * 100; // 0.006554 -> 0.6554
+            const sign = percentage >= 0 ? '+' : '';
+            return `${sign}${percentage.toFixed(1)}%`; // +0.7%
         }
         
         // 샘플 데이터 로드 (JSON이 없을 경우)
