@@ -1913,11 +1913,287 @@
         }
         
         // 차트 생성
-        function createSectorChart(sector, period = '30d') {
-            const { dates, scores, updateIndices } = processSectorData(sector, period);
-            const stats = calculateStats(scores);
-            const updateInfo = getLastUpdateInfo(sector);
-            const color = sectorData[sector].color;
+        // JSON에서 차트 데이터 로드하는 함수
+        async function loadChartDataFromJSON(sectorName, days) {
+            const endDate = new Date(currentDisplayDate);
+            const startDate = new Date(endDate);
+            startDate.setDate(endDate.getDate() - (days - 1));
+            
+            const chartData = [];
+            
+            // 날짜 범위 내의 모든 날짜에 대해 JSON 로드 시도
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                
+                try {
+                    const response = await fetch(`json_output/data_${dateStr}.json`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const sector = data.sectors.find(s => s.name_en === sectorName);
+                        
+                        chartData.push({
+                            date: dateStr,
+                            score: sector ? sector.final_score : null,
+                            updated: sector ? true : false // 해당 섹터가 분석되었는지
+                        });
+                    } else {
+                        // JSON 파일 없음 (주말 등)
+                        chartData.push({
+                            date: dateStr,
+                            score: null,
+                            updated: false
+                        });
+                    }
+                } catch (e) {
+                    chartData.push({
+                        date: dateStr,
+                        score: null,
+                        updated: false
+                    });
+                }
+            }
+            
+            return chartData;
+        }
+        
+        // 차트 데이터 처리 (이전 값 유지 로직)
+        function processChartData(rawData) {
+            const processed = [];
+            let lastScore = null;
+            const updateIndices = [];
+            
+            rawData.forEach((item, index) => {
+                if (item.score !== null) {
+                    lastScore = item.score;
+                    updateIndices.push(index);
+                }
+                
+                processed.push({
+                    date: item.date,
+                    score: lastScore, // 이전 값 유지
+                    updated: item.updated
+                });
+            });
+            
+            return { processed, updateIndices };
+        }
+        
+        // 통계 계산
+        function calculateChartStats(data, updateIndices) {
+            const scores = data.map(d => d.score).filter(s => s !== null);
+            
+            if (scores.length === 0) {
+                return {
+                    mean: 0,
+                    std: 0,
+                    max: 0,
+                    min: 0,
+                    vsAvg: 0,
+                    updateCount: 0,
+                    avgCycle: 0,
+                    lastUpdate: 'N/A',
+                    currentScore: 0
+                };
+            }
+            
+            const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
+            const std = Math.sqrt(variance);
+            const max = Math.max(...scores);
+            const min = Math.min(...scores);
+            const vsAvg = ((scores[scores.length - 1] - mean) / mean * 100).toFixed(0);
+            
+            // Update 통계
+            const updateCount = updateIndices.length;
+            const avgCycle = updateCount > 1 ? (data.length / updateCount).toFixed(1) : 0;
+            
+            // 마지막 업데이트 날짜
+            const lastUpdateIndex = updateIndices[updateIndices.length - 1];
+            const lastUpdate = lastUpdateIndex !== undefined ? data[lastUpdateIndex].date : 'N/A';
+            
+            // 현재 스코어
+            const currentScore = scores[scores.length - 1] || 0;
+            
+            return { mean, std, max, min, vsAvg, updateCount, avgCycle, lastUpdate, currentScore };
+        }
+        
+        async function createSectorChart(sectorValue, period = '30d') {
+            // 섹터 value -> 실제 이름 매핑
+            const sectorNameMap = {
+                'semiconductors': 'Semiconductors',
+                'shipbuilding': 'Shipbuilding',
+                'defense': 'Defense Equip',
+                'cosmetics': 'Cosmetics',
+                'financials': 'Financials',
+                'automobiles': 'Automobiles',
+                'entertainment': 'Entertainment',
+                'biotech': 'Biotech & Pharm',
+                'medical': 'Medical Equip',
+                'gaming': 'Gaming',
+                'batteries': 'Batteries',
+                'software': 'Software',
+                'renewable': 'Renewable Ener',
+                'nuclear': 'Nuclear Power',
+                'telecom': 'Telecom',
+                'construction': 'Construction',
+                'consumer': 'Consumer Goods',
+                'display': 'Display Tech',
+                'holding': 'Holding Co'
+            };
+            
+            const sectorName = sectorNameMap[sectorValue];
+            if (!sectorName) {
+                console.warn('Unknown sector:', sectorValue);
+                return;
+            }
+            
+            // 기간에 따른 일수
+            const daysMap = { '30d': 30, '60d': 60, '90d': 90 };
+            const days = daysMap[period] || 30;
+            
+            // JSON에서 데이터 로드
+            const rawData = await loadChartDataFromJSON(sectorName, days);
+            const { processed, updateIndices } = processChartData(rawData);
+            const stats = calculateChartStats(processed, updateIndices);
+            
+            // 업데이트된 점만 표시
+            const updatePoints = processed.map((item, index) => {
+                return updateIndices.includes(index) ? item.score : null;
+            });
+            
+            // 날짜 라벨
+            const labels = processed.map(item => {
+                const d = new Date(item.date);
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            });
+            
+            const scores = processed.map(item => item.score);
+            
+            // 차트 생성
+            const ctx = document.getElementById('trendChart');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Score',
+                            data: scores,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            segment: {
+                                borderDash: ctx => {
+                                    const index = ctx.p0DataIndex;
+                                    // 다음 점이 업데이트된 점이면 실선, 아니면 점선
+                                    return updateIndices.includes(index + 1) ? [] : [5, 5];
+                                }
+                            }
+                        },
+                        {
+                            label: 'Updates',
+                            data: updatePoints,
+                            borderColor: 'transparent',
+                            backgroundColor: '#3B82F6',
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointStyle: 'circle',
+                            showLine: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === 'Updates') {
+                                        return `Score: ${context.parsed.y.toFixed(1)} (Updated)`;
+                                    }
+                                    const isUpdate = updateIndices.includes(context.dataIndex);
+                                    return `Score: ${context.parsed.y.toFixed(1)}${isUpdate ? ' (Updated)' : ' (Carried)'}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { 
+                                color: 'rgba(75, 85, 99, 0.2)',
+                                drawBorder: false
+                            },
+                            ticks: { 
+                                color: '#9CA3AF',
+                                font: { size: 11 },
+                                maxRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            min: 0,
+                            max: 10,
+                            grid: { 
+                                color: 'rgba(75, 85, 99, 0.2)',
+                                drawBorder: false
+                            },
+                            ticks: { 
+                                color: '#9CA3AF',
+                                font: { size: 11 },
+                                stepSize: 2
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // UI 업데이트
+            const color = stats.currentScore >= 7 ? '#10B981' : stats.currentScore >= 5 ? '#3B82F6' : '#EF4444';
+            
+            document.getElementById('currentScore').textContent = stats.currentScore.toFixed(1);
+            document.getElementById('currentScore').style.color = color;
+            
+            // 마지막 업데이트 날짜 포맷
+            if (stats.lastUpdate !== 'N/A') {
+                const [y, m, d] = stats.lastUpdate.split('-');
+                const dateObj = new Date(y, m - 1, d);
+                const options = { month: 'short', day: 'numeric' };
+                document.getElementById('lastUpdate').textContent = dateObj.toLocaleDateString('en-US', options);
+            } else {
+                document.getElementById('lastUpdate').textContent = 'N/A';
+            }
+            
+            document.getElementById('updateCount').textContent = `${stats.updateCount} times`;
+            document.getElementById('avgCycle').textContent = `${stats.avgCycle} days`;
+            
+            document.getElementById('statMean').textContent = stats.mean.toFixed(1);
+            document.getElementById('statStd').textContent = stats.std.toFixed(1);
+            document.getElementById('statVsAvg').textContent = `${stats.vsAvg > 0 ? '+' : ''}${stats.vsAvg}%`;
+            document.getElementById('statVsAvg').style.color = stats.vsAvg >= 0 ? '#10B981' : '#EF4444';
+            document.getElementById('statMax').textContent = stats.max.toFixed(1);
+            document.getElementById('statMin').textContent = stats.min.toFixed(1);
+        }
             
             // 업데이트 포인트만 표시
             const updatePoints = scores.map((score, index) => {
