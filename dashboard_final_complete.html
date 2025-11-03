@@ -1327,7 +1327,7 @@
             </div>
             
             <!-- Unified Bar -->
-            <div class="unified-bar-container">
+            <div class="unified-bar-container" id="convictionBarContainer">
                 <div class="bar-segment strong-buy" style="width: 15.8%;">15.8%</div>
                 <div class="bar-segment buy" style="width: 36.8%;">36.8%</div>
                 <div class="bar-segment neutral" style="width: 26.3%;">26.3%</div>
@@ -1336,37 +1336,37 @@
             </div>
             
             <!-- Legend -->
-            <div class="conviction-legend">
+            <div class="conviction-legend" id="convictionLegend">
                 <div class="legend-item">
                     <span class="legend-dot strong-buy"></span>
                     <span class="legend-label">강력 매수</span>
-                    <span class="legend-count">(3 sectors)</span>
+                    <span class="legend-count" id="strongBuyLegend">(3 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot buy"></span>
                     <span class="legend-label">매수</span>
-                    <span class="legend-count">(7 sectors)</span>
+                    <span class="legend-count" id="buyLegend">(7 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot neutral"></span>
                     <span class="legend-label">중립</span>
-                    <span class="legend-count">(5 sectors)</span>
+                    <span class="legend-count" id="neutralLegend">(5 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot sell"></span>
                     <span class="legend-label">매도</span>
-                    <span class="legend-count">(3 sectors)</span>
+                    <span class="legend-count" id="cautionLegend">(3 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot strong-sell"></span>
                     <span class="legend-label">강력 매도</span>
-                    <span class="legend-count">(1 sector)</span>
+                    <span class="legend-count" id="avoidLegend">(1 sector)</span>
                 </div>
             </div>
             
             <!-- Analysis Info - Bottom -->
             <div class="analysis-info">
-                <div class="info-text">
+                <div class="info-text" id="analysisInfoText">
                     오늘 <span class="info-highlight">19개 섹터 분석</span> / 전체 19개 중
                 </div>
             </div>
@@ -2340,8 +2340,8 @@
             }
             
             // Conviction Distribution 업데이트
-            if (data.sectors) {
-                updateConvictionDistribution(data.sectors);
+            if (data.sectors || data.summary) {
+                updateConvictionDistribution(data);
             }
             
             // 섹터별 데이터를 전역 변수에 저장
@@ -2384,13 +2384,13 @@
         }
         
         // Conviction Distribution 차트 업데이트 함수
-        function updateConvictionDistribution(sectors) {
-            // JSON summary에서 직접 가져오기 (analyzed_sectors 기준)
-            if (window.lastJSONData && window.lastJSONData.summary) {
-                const summary = window.lastJSONData.summary;
+        function updateConvictionDistribution(data) {
+            // JSON summary에서 직접 가져오기
+            if (data && data.summary) {
+                const summary = data.summary;
                 const analyzedTotal = summary.analyzed_sectors || 15;
                 
-                // 각 카테고리 개수 (JSON에서 직접)
+                // 각 카테고리 개수
                 const distribution = {
                     strongBuy: summary.strong_buy_count || 0,
                     buy: summary.buy_count || 0,
@@ -2408,52 +2408,35 @@
                     avoid: ((distribution.avoid / analyzedTotal) * 100).toFixed(1)
                 };
                 
-                // HTML 업데이트
-                const convictionBars = document.querySelector('.conviction-bars');
-                if (convictionBars) {
-                    convictionBars.innerHTML = `
-                        <div class="conviction-bar strong-buy" style="width: ${percentages.strongBuy}%">
-                            <div class="conviction-percentage">${percentages.strongBuy}%</div>
-                            <div class="conviction-label">
-                                <span class="conviction-emoji">🟢</span> 강력 매수 
-                                <span class="conviction-count">(${distribution.strongBuy} sectors)</span>
-                            </div>
-                        </div>
-                        <div class="conviction-bar buy" style="width: ${percentages.buy}%">
-                            <div class="conviction-percentage">${percentages.buy}%</div>
-                            <div class="conviction-label">
-                                <span class="conviction-emoji">🔵</span> 매수 
-                                <span class="conviction-count">(${distribution.buy} sectors)</span>
-                            </div>
-                        </div>
-                        <div class="conviction-bar neutral" style="width: ${percentages.neutral}%">
-                            <div class="conviction-percentage">${percentages.neutral}%</div>
-                            <div class="conviction-label">
-                                <span class="conviction-emoji">⚪</span> 중립 
-                                <span class="conviction-count">(${distribution.neutral} sectors)</span>
-                            </div>
-                        </div>
-                        <div class="conviction-bar caution" style="width: ${percentages.caution}%">
-                            <div class="conviction-percentage">${percentages.caution}%</div>
-                            <div class="conviction-label">
-                                <span class="conviction-emoji">🟠</span> 매도 
-                                <span class="conviction-count">(${distribution.caution} sectors)</span>
-                            </div>
-                        </div>
-                        <div class="conviction-bar avoid" style="width: ${percentages.avoid}%">
-                            <div class="conviction-percentage">${percentages.avoid}%</div>
-                            <div class="conviction-label">
-                                <span class="conviction-emoji">🔴</span> 강력 매도 
-                                <span class="conviction-count">(${distribution.avoid} sector${distribution.avoid !== 1 ? 's' : ''})</span>
-                            </div>
-                        </div>
+                // 바 차트 업데이트
+                const barContainer = document.getElementById('convictionBarContainer');
+                if (barContainer) {
+                    barContainer.innerHTML = `
+                        <div class="bar-segment strong-buy" style="width: ${percentages.strongBuy}%;">${percentages.strongBuy}%</div>
+                        <div class="bar-segment buy" style="width: ${percentages.buy}%;">${percentages.buy}%</div>
+                        <div class="bar-segment neutral" style="width: ${percentages.neutral}%;">${percentages.neutral}%</div>
+                        <div class="bar-segment sell" style="width: ${percentages.caution}%;">${percentages.caution}%</div>
+                        <div class="bar-segment strong-sell" style="width: ${percentages.avoid}%;">${percentages.avoid}%</div>
                     `;
                 }
                 
+                // Legend 카운트 업데이트
+                const strongBuyLegend = document.getElementById('strongBuyLegend');
+                const buyLegend = document.getElementById('buyLegend');
+                const neutralLegend = document.getElementById('neutralLegend');
+                const cautionLegend = document.getElementById('cautionLegend');
+                const avoidLegend = document.getElementById('avoidLegend');
+                
+                if (strongBuyLegend) strongBuyLegend.textContent = `(${distribution.strongBuy} sector${distribution.strongBuy !== 1 ? 's' : ''})`;
+                if (buyLegend) buyLegend.textContent = `(${distribution.buy} sector${distribution.buy !== 1 ? 's' : ''})`;
+                if (neutralLegend) neutralLegend.textContent = `(${distribution.neutral} sector${distribution.neutral !== 1 ? 's' : ''})`;
+                if (cautionLegend) cautionLegend.textContent = `(${distribution.caution} sector${distribution.caution !== 1 ? 's' : ''})`;
+                if (avoidLegend) avoidLegend.textContent = `(${distribution.avoid} sector${distribution.avoid !== 1 ? 's' : ''})`;
+                
                 // 하단 요약 텍스트 업데이트
-                const summaryText = document.querySelector('.conviction-summary');
-                if (summaryText) {
-                    summaryText.textContent = `오늘 ${analyzedTotal}개 섹터 분석 / 전체 ${summary.total_sectors}개 중`;
+                const infoText = document.getElementById('analysisInfoText');
+                if (infoText) {
+                    infoText.innerHTML = `오늘 <span class="info-highlight">${analyzedTotal}개 섹터 분석</span> / 전체 ${summary.total_sectors}개 중`;
                 }
             }
         }
