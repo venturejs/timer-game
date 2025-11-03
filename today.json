@@ -1,19 +1,17 @@
 {
   "metadata": {
-    "date": "2026-11-04",
-    "update_time": "2027-11-04T18:30:00+09:00",
+    "date": "2024-11-03",
+    "update_time": "2024-11-03T18:30:00+09:00",
     "model_version": "v3.2.1",
     "market_status": "closed",
-    "next_update": "2028-11-05T09:00:00+09:00"
+    "next_update": "2024-11-04T09:00:00+09:00"
   },
   "summary": {
-    "total_sectors": 18,
-    "analyzed_sectors": 15,
+    "total_sectors": 19,
     "strong_buy_count": 3,
-    "buy_count": 3,
-    "neutral_count": 5,
-    "caution_count": 3,
-    "avoid_count": 1,
+    "buy_count": 4,
+    "neutral_count": 8,
+    "avoid_count": 4,
     "overall_accuracy": 74.2
   },
   "sectors": [
