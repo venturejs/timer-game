@@ -2101,11 +2101,11 @@
                     document.getElementById('latestDataDate').textContent = formattedDate;
                 } else {
                     // 기본값 (파일을 찾지 못한 경우)
-                    document.getElementById('latestDataDate').textContent = 'October 30, 2025';
+                    document.getElementById('latestDataDate').textContent = 'Loading...';
                 }
             } catch (error) {
                 console.error('Error finding latest data date:', error);
-                document.getElementById('latestDataDate').textContent = 'October 30, 2025';
+                document.getElementById('latestDataDate').textContent = 'Loading...';
             }
         }
         
@@ -2291,6 +2291,7 @@
             
             // 메타데이터 업데이트 - 상단 날짜들
             if (data.metadata) {
+                // 왼쪽 메인 날짜 (November 4, 2024)
                 const dateObj = new Date(data.metadata.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { 
                     year: 'numeric', 
@@ -2298,17 +2299,23 @@
                     day: 'numeric' 
                 });
                 
-                // 상단 왼쪽 날짜
                 const currentDateElem = document.getElementById('currentDate');
                 if (currentDateElem) {
                     currentDateElem.textContent = formattedDate;
                 }
                 
-                // LATEST DATA AVAILABLE 날짜
+                // LATEST DATA AVAILABLE 날짜 (October 31, 2025)
                 const latestDateElem = document.getElementById('latestDataDate');
                 if (latestDateElem) {
-                    // 한국 날짜 형식으로 표시 (October 30, 2025)
-                    latestDateElem.textContent = formattedDate;
+                    // latest_data_date가 있으면 그것을 사용, 없으면 date를 사용
+                    const latestDate = data.metadata.latest_data_date || data.metadata.date;
+                    const latestDateObj = new Date(latestDate);
+                    const formattedLatestDate = latestDateObj.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    latestDateElem.textContent = formattedLatestDate;
                 }
             }
             
