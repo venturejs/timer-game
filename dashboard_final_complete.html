@@ -2706,10 +2706,10 @@
             // JSON 파일 로드 시도
             loadTodayData();
             
-            // 기본 차트 생성
-            findLatestDataDate();
+            // 기본 차트 생성 (findLatestDataDate 제거 - loadTodayData가 날짜 처리함)
+            // findLatestDataDate();  // 이 함수는 다른 폴더의 파일을 찾으므로 주석처리
             createSectorChart('semiconductors', '30d');
-            loadSectorTable('2025-10-31');
+            // loadSectorTable('2025-10-31');  // 이것도 필요없음
         });
     </script>
 </body>
