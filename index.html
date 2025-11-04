@@ -2589,6 +2589,34 @@
             const dates = sectorInfo.chartData.map(d => d.date);
             const scores = sectorInfo.chartData.map(d => d.score);
             
+            // Carry Forward 처리를 위한 데이터 처리
+            const processedScores = [];
+            let lastValidScore = null;
+            
+            sectorInfo.chartData.forEach(item => {
+                if (item.score !== null) {
+                    lastValidScore = item.score;
+                    processedScores.push(item.score);
+                } else {
+                    processedScores.push(lastValidScore);
+                }
+            });
+            
+            // Chart.js segment 설정 (점선/실선 구분)
+            const segmentBorderDash = (ctx) => {
+                const currentIdx = ctx.p0DataIndex;
+                const nextIdx = ctx.p1DataIndex;
+                if (currentIdx >= 0 && nextIdx < sectorInfo.chartData.length) {
+                    const currentData = sectorInfo.chartData[currentIdx];
+                    const nextData = sectorInfo.chartData[nextIdx];
+                    // 둘 중 하나라도 null이면 점선
+                    if (!currentData.updated || !nextData.updated) {
+                        return [5, 5];
+                    }
+                }
+                return [];
+            };
+            
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -2598,17 +2626,21 @@
                     }),
                     datasets: [{
                         label: 'AI Score',
-                        data: scores,
+                        data: processedScores,
                         borderColor: '#3B82F6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 2.5,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 4,
+                        // 점은 updated가 true인 곳만 표시
+                        pointRadius: sectorInfo.chartData.map(d => d.updated ? 4 : 0),
                         pointHoverRadius: 6,
                         pointBackgroundColor: '#3B82F6',
                         pointBorderColor: '#1F2937',
-                        pointBorderWidth: 2
+                        pointBorderWidth: 2,
+                        segment: {
+                            borderDash: segmentBorderDash
+                        }
                     }]
                 },
                 options: {
@@ -2660,9 +2692,63 @@
                 }
             });
             
-            // 차트 메타 정보 업데이트
-            document.getElementById('currentScore').textContent = sectorInfo.score.toFixed(1);
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            // 차트 메타 정보 업데이트 (수정된 부분)
+            // 1. CURRENT SCORE - 마지막 valid score
+            const lastValidData = sectorInfo.chartData.filter(d => d.score !== null).pop();
+            if (lastValidData) {
+                document.getElementById('currentScore').textContent = lastValidData.score.toFixed(1);
+            }
+            
+            // 2. LAST UPDATE - 마지막 업데이트 날짜
+            const lastUpdateData = sectorInfo.chartData.filter(d => d.updated === true).pop();
+            if (lastUpdateData) {
+                const lastDate = new Date(lastUpdateData.date);
+                document.getElementById('lastUpdate').textContent = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+            
+            // 3. UPDATE COUNT - updated가 true인 개수
+            const updateCount = sectorInfo.chartData.filter(d => d.updated === true).length;
+            document.getElementById('updateCount').textContent = `${updateCount} times`;
+            
+            // 4. AVG CYCLE - 업데이트 간격 평균
+            const updatedDates = sectorInfo.chartData
+                .filter(d => d.updated === true)
+                .map(d => new Date(d.date));
+            
+            if (updatedDates.length > 1) {
+                let totalDays = 0;
+                for (let i = 1; i < updatedDates.length; i++) {
+                    const diff = (updatedDates[i] - updatedDates[i-1]) / (1000 * 60 * 60 * 24);
+                    totalDays += diff;
+                }
+                const avgCycle = totalDays / (updatedDates.length - 1);
+                document.getElementById('avgCycle').textContent = `${avgCycle.toFixed(1)} days`;
+            }
+            
+            // 5. 통계 계산 (MEAN, STD, MAX, MIN, VS AVG)
+            const validScores = sectorInfo.chartData
+                .filter(d => d.score !== null)
+                .map(d => d.score);
+            
+            if (validScores.length > 0) {
+                const mean = validScores.reduce((a, b) => a + b, 0) / validScores.length;
+                const variance = validScores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / validScores.length;
+                const std = Math.sqrt(variance);
+                const max = Math.max(...validScores);
+                const min = Math.min(...validScores);
+                
+                document.getElementById('statMean').textContent = mean.toFixed(1);
+                document.getElementById('statStd').textContent = std.toFixed(1);
+                document.getElementById('statMax').textContent = max.toFixed(1);
+                document.getElementById('statMin').textContent = min.toFixed(1);
+                
+                // VS AVG는 현재 점수와 평균의 차이
+                if (lastValidData) {
+                    const vsAvg = ((lastValidData.score - mean) / mean * 100).toFixed(0);
+                    document.getElementById('statVsAvg').textContent = `${vsAvg > 0 ? '+' : ''}${vsAvg}%`;
+                    document.getElementById('statVsAvg').style.color = vsAvg >= 0 ? '#10B981' : '#EF4444';
+                }
+            }
         }
         
         // JSON 데이터로 섹터 상세 정보 업데이트
