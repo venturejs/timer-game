@@ -13,8 +13,1272 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
-    <!-- External CSS -->
-    <link rel="stylesheet" href="dashboard-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Institutional Color Palette */
+            --bg-primary: #0F1419;
+            --bg-secondary: #1A202C;
+            --bg-tertiary: #2D3748;
+            --bg-elevated: #1F2937;
+            
+            --border-subtle: #374151;
+            --border-medium: #4B5563;
+            --border-bright: #6B7280;
+            
+            --blue-primary: #3B82F6;
+            --blue-light: #60A5FA;
+            --blue-dark: #2563EB;
+            
+            --green-primary: #10B981;
+            --green-light: #34D399;
+            --green-dark: #059669;
+            
+            --red-primary: #EF4444;
+            --red-light: #F87171;
+            --red-dark: #DC2626;
+            
+            --amber-primary: #F59E0B;
+            --amber-light: #FBBF24;
+            
+            --text-primary: #F9FAFB;
+            --text-secondary: #E5E7EB;
+            --text-tertiary: #9CA3AF;
+            --text-muted: #6B7280;
+            
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--blue-primary), var(--blue-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo-text p {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green-primary);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+        
+        /* Date Control */
+        .date-control {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .date-btn {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        
+        .date-btn:hover {
+            background: var(--blue-primary);
+            border-color: var(--blue-primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .current-date {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            min-width: 140px;
+            text-align: center;
+        }
+        
+        .date-meta {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+        
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .meta-label {
+            color: var(--text-tertiary);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        
+        .meta-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        /* Conviction Distribution Section - Compact */
+        .conviction-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .section-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title-wrapper {
+            flex: 1;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+        
+        .section-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+        
+        /* Unified Bar Chart */
+        .unified-bar-container {
+            display: flex;
+            height: 48px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .bar-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            transition: all 0.3s;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .bar-segment:hover {
+            filter: brightness(1.15);
+            z-index: 1;
+        }
+        
+        .bar-segment.strong-buy {
+            background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+        }
+        
+        .bar-segment.buy {
+            background: linear-gradient(135deg, var(--blue-primary), var(--blue-light));
+        }
+        
+        .bar-segment.neutral {
+            background: linear-gradient(135deg, #6B7280, #9CA3AF);
+        }
+        
+        .bar-segment.sell {
+            background: linear-gradient(135deg, var(--amber-primary), var(--amber-light));
+        }
+        
+        .bar-segment.strong-sell {
+            background: linear-gradient(135deg, var(--red-primary), var(--red-light));
+        }
+        
+        /* Legend */
+        .conviction-legend {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .legend-dot.strong-buy { background: var(--green-primary); }
+        .legend-dot.buy { background: var(--blue-primary); }
+        .legend-dot.neutral { background: #9CA3AF; }
+        .legend-dot.sell { background: var(--amber-primary); }
+        .legend-dot.strong-sell { background: var(--red-primary); }
+        
+        .legend-label {
+            font-weight: 600;
+        }
+        
+        .legend-count {
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+        
+        /* Analysis Info Box */
+        .analysis-info {
+            padding: 10px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .info-text {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .info-highlight {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        .unanalyzed-notice {
+            padding: 2px 8px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @keyframes expandWidth {
+            from { width: 0; }
+        }
+        
+        .bar-segment {
+            animation: expandWidth 1s ease-out;
+        }
+        
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        /* Chart Section */
+        .chart-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .sector-select {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .sector-select:focus {
+            outline: none;
+            border-color: var(--blue-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .period-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-elevated);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        
+        .period-btn {
+            padding: 6px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-tertiary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .period-btn.active {
+            background: var(--blue-primary);
+            color: white;
+        }
+        
+        .chart-wrapper {
+            height: 350px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-meta-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-badge {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .meta-badge .meta-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .meta-badge .meta-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        
+        .chart-legend-box {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 12px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+        
+        .legend-item-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .legend-line-solid {
+            width: 28px;
+            height: 3px;
+            background: var(--blue-primary);
+            border-radius: 2px;
+        }
+        
+        .legend-line-dashed {
+            width: 28px;
+            height: 3px;
+            background: linear-gradient(to right, var(--blue-primary) 50%, transparent 50%);
+            background-size: 6px 3px;
+        }
+        
+        .legend-dot-update {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--blue-primary);
+            box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+        }
+        
+        .chart-metrics {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            padding: 20px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blue-primary);
+        }
+        
+        /* Insights Panel */
+        .insights-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* Sector Overview Card */
+        .sector-overview-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .overview-score-group {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+        
+        .overview-score {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -2px;
+            color: var(--green-primary);
+        }
+        
+        .overview-change {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--green-primary);
+        }
+        
+        .overview-signal {
+            display: flex;
+            align-items: center;
+        }
+        
+        .overview-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .overview-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .overview-meta-item-inline {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        
+        .overview-meta-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .overview-meta-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        
+        .overview-meta-value.sentiment-score {
+            color: var(--blue-primary);
+        }
+        
+        .overview-meta-value.fundamental-score {
+            color: var(--green-primary);
+        }
+        
+        .status-badge-detail {
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .status-badge-detail.analyzed {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue-primary);
+        }
+        
+        .status-badge-detail.carried {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--text-muted);
+        }
+        
+        .insight-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .insight-row:last-child {
+            border-bottom: none;
+        }
+        
+        .insight-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .insight-value {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        
+        .insight-value.positive { color: var(--green-primary); }
+        .insight-value.negative { color: var(--red-primary); }
+        .insight-value.neutral { color: var(--amber-primary); }
+        
+        /* Table Section */
+        .table-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table thead {
+            background: var(--bg-elevated);
+        }
+        
+        .data-table th {
+            padding: 16px 12px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-medium);
+        }
+        
+        .data-table th.right { text-align: right; }
+        .data-table th.center { text-align: center; }
+        
+        .data-table tbody tr {
+            border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.2s;
+        }
+        
+        .data-table tbody tr:hover {
+            background: var(--bg-elevated);
+        }
+        
+        .data-table td {
+            padding: 12px 10px;
+            color: var(--text-secondary);
+        }
+        
+        .data-table td.right { text-align: right; }
+        .data-table td.center { text-align: center; }
+        
+        .sector-cell {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .sector-code {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            margin-left: 6px;
+        }
+        
+        /* Score Display */
+        .score-group {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+        
+        .score-chip {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        
+        .score-chip.high {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green-primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .score-chip.mid {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue-primary);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .score-chip.low {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red-primary);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .badge-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green-primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--amber-primary);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .badge-low {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red-primary);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .signal-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .signal-strong-buy {
+            background: var(--green-primary);
+            color: var(--bg-primary);
+        }
+        
+        .signal-buy {
+            background: var(--blue-primary);
+            color: white;
+        }
+        
+        .signal-neutral {
+            background: var(--amber-primary);
+            color: var(--bg-primary);
+        }
+        
+        .signal-avoid {
+            background: var(--red-primary);
+            color: white;
+        }
+        
+        .weight-value {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .weight-high { color: var(--green-primary); }
+        .weight-mid { color: var(--blue-primary); }
+        .weight-low { color: var(--text-tertiary); }
+        
+        /* AI Conviction Score */
+        .ai-conviction {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .conviction-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--blue-primary);
+            line-height: 1;
+        }
+        
+        .conviction-bar {
+            width: 50px;
+            height: 3px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .conviction-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-primary), var(--blue-primary));
+        }
+        
+        .conviction-label {
+            font-size: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* AI Accuracy */
+        .ai-accuracy {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .accuracy-main {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--green-primary);
+        }
+        
+        .accuracy-detail {
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+        
+        .accuracy-positive {
+            color: var(--green-light);
+        }
+        
+        .accuracy-label {
+            font-size: 8px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        /* Reliability Indicator */
+        .reliability-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .reliability-value {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .reliability-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .reliability-high .reliability-value {
+            color: var(--green-primary);
+        }
+        
+        .reliability-high .reliability-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green-primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .reliability-medium .reliability-value {
+            color: var(--amber-primary);
+        }
+        
+        .reliability-medium .reliability-badge {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--amber-primary);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .reliability-low .reliability-value {
+            color: var(--red-primary);
+        }
+        
+        .reliability-low .reliability-badge {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red-primary);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Performance vs BM */
+        .perf-positive {
+            color: var(--green-primary);
+            font-weight: 600;
+        }
+        
+        .perf-negative {
+            color: var(--red-primary);
+            font-weight: 600;
+        }
+        
+        .perf-neutral {
+            color: var(--text-tertiary);
+        }
+        
+        /* AI Reasoning Box */
+        .ai-reasoning {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05));
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--blue-primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-top: 8px;
+        }
+        
+        .reasoning-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        
+        .ai-icon {
+            font-size: 16px;
+        }
+        
+        .reasoning-timestamp {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        
+        .reasoning-content {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .reasoning-points {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0;
+        }
+        
+        .reasoning-points li {
+            padding: 6px 0;
+            color: var(--text-secondary);
+        }
+        
+        .reasoning-points li strong {
+            color: var(--text-primary);
+        }
+        
+        .reasoning-risk {
+            color: var(--amber-primary);
+        }
+        
+        .data-sources {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .data-sources small {
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        
+        /* Reliability Section */
+        .reliability-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .reliability-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .reliability-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .reliability-card:hover {
+            border-color: var(--blue-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        
+        .reliability-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .reliability-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        
+        .reliability-description {
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-tertiary);
+        }
+        
+        .reliability-description strong {
+            color: var(--blue-primary);
+            font-weight: 700;
+        }
+        
+        @media (max-width: 1200px) {
+            .reliability-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .reliability-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-info {
+            display: flex;
+            gap: 32px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .footer-item strong {
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        
+        .footer-branding {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .chart-metrics {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .conviction-legend {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            
+            .legend-item {
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .conviction-section {
+                padding: 16px 20px;
+            }
+            
+            .unified-bar-container {
+                height: 40px;
+                font-size: 12px;
+            }
+            
+            .conviction-legend {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .header-right {
+                display: none;
+            }
+            
+            .date-meta {
+                display: none;
+            }
+            
+            .bar-segment {
+                font-size: 0;
+            }
+            
+            .bar-segment::after {
+                content: attr(data-percent);
+                font-size: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
     
@@ -63,7 +1327,7 @@
             </div>
             
             <!-- Unified Bar -->
-            <div class="unified-bar-container">
+            <div class="unified-bar-container" id="convictionBarContainer">
                 <div class="bar-segment strong-buy" style="width: 15.8%;">15.8%</div>
                 <div class="bar-segment buy" style="width: 36.8%;">36.8%</div>
                 <div class="bar-segment neutral" style="width: 26.3%;">26.3%</div>
@@ -72,37 +1336,37 @@
             </div>
             
             <!-- Legend -->
-            <div class="conviction-legend">
+            <div class="conviction-legend" id="convictionLegend">
                 <div class="legend-item">
                     <span class="legend-dot strong-buy"></span>
                     <span class="legend-label">강력 매수</span>
-                    <span class="legend-count">(3 sectors)</span>
+                    <span class="legend-count" id="strongBuyLegend">(3 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot buy"></span>
                     <span class="legend-label">매수</span>
-                    <span class="legend-count">(7 sectors)</span>
+                    <span class="legend-count" id="buyLegend">(7 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot neutral"></span>
                     <span class="legend-label">중립</span>
-                    <span class="legend-count">(5 sectors)</span>
+                    <span class="legend-count" id="neutralLegend">(5 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot sell"></span>
                     <span class="legend-label">매도</span>
-                    <span class="legend-count">(3 sectors)</span>
+                    <span class="legend-count" id="cautionLegend">(3 sectors)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot strong-sell"></span>
                     <span class="legend-label">강력 매도</span>
-                    <span class="legend-count">(1 sector)</span>
+                    <span class="legend-count" id="avoidLegend">(1 sector)</span>
                 </div>
             </div>
             
             <!-- Analysis Info - Bottom -->
             <div class="analysis-info">
-                <div class="info-text">
+                <div class="info-text" id="analysisInfoText">
                     오늘 <span class="info-highlight">19개 섹터 분석</span> / 전체 19개 중
                 </div>
             </div>
@@ -299,7 +1563,7 @@
                         <tr style="background: var(--bg-elevated);">
                             <th style="border-bottom: none;"></th>
                             <th class="center" style="font-size: 10px; font-weight: 500; border-bottom: none;">1-10 Scale</th>
-                            <th class="center" style="font-size: 10px; font-weight: 500; border-bottom: none;">Std Dev</th>
+                            <th class="center" style="font-size: 10px; font-weight: 500; border-bottom: none;"></th>
                             <th style="border-bottom: none;"></th>
                             <th class="center" style="font-size: 10px; font-weight: 500; border-bottom: none;">Historical</th>
                             <th class="right" style="font-size: 10px; font-weight: 500;">1D</th>
@@ -837,11 +2101,11 @@
                     document.getElementById('latestDataDate').textContent = formattedDate;
                 } else {
                     // 기본값 (파일을 찾지 못한 경우)
-                    document.getElementById('latestDataDate').textContent = 'October 30, 2025';
+                    document.getElementById('latestDataDate').textContent = 'Loading...';
                 }
             } catch (error) {
                 console.error('Error finding latest data date:', error);
-                document.getElementById('latestDataDate').textContent = 'October 30, 2025';
+                document.getElementById('latestDataDate').textContent = 'Loading...';
             }
         }
         
@@ -1004,12 +2268,466 @@
             });
         }
         
+        // today.json 파일 로드 함수
+        async function loadTodayData() {
+            try {
+                const response = await fetch('today.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('today.json loaded successfully');
+                    updateDashboardWithJSON(data);
+                } else {
+                    console.log('today.json not found, using default data');
+                }
+            } catch (error) {
+                console.log('Error loading today.json:', error);
+            }
+        }
+        
+        // JSON 데이터로 대시보드 업데이트
+        function updateDashboardWithJSON(data) {
+            // 전역 변수에 JSON 데이터 저장
+            window.lastJSONData = data;
+            
+            // 메타데이터 업데이트 - 상단 날짜들
+            if (data.metadata) {
+                // 왼쪽 메인 날짜 (November 4, 2024)
+                const dateObj = new Date(data.metadata.date);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                const currentDateElem = document.getElementById('currentDate');
+                if (currentDateElem) {
+                    currentDateElem.textContent = formattedDate;
+                }
+                
+                // LATEST DATA AVAILABLE 날짜 (October 31, 2025)
+                const latestDateElem = document.getElementById('latestDataDate');
+                if (latestDateElem) {
+                    // latest_data_date가 있으면 그것을 사용, 없으면 date를 사용
+                    const latestDate = data.metadata.latest_data_date || data.metadata.date;
+                    const latestDateObj = new Date(latestDate);
+                    const formattedLatestDate = latestDateObj.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    latestDateElem.textContent = formattedLatestDate;
+                }
+            }
+            
+            // 요약 카드 업데이트 - Strong Buy, Buy/Neutral, Avoid 카운트
+            if (data.summary) {
+                // Strong Buy 카드
+                const strongBuyCard = document.querySelector('.summary-card:nth-child(1) .summary-value');
+                if (strongBuyCard) {
+                    strongBuyCard.textContent = data.summary.strong_buy_count;
+                }
+                
+                // Buy/Neutral 카드 (합계)
+                const buyNeutralCard = document.querySelector('.summary-card:nth-child(2) .summary-value');
+                if (buyNeutralCard) {
+                    buyNeutralCard.textContent = data.summary.buy_count + data.summary.neutral_count;
+                }
+                
+                // Avoid 카드
+                const avoidCard = document.querySelector('.summary-card:nth-child(3) .summary-value');
+                if (avoidCard) {
+                    avoidCard.textContent = data.summary.avoid_count;
+                }
+                
+                // Accuracy 카드 (4번째 카드가 있다면)
+                const accuracyCard = document.querySelector('.summary-card:nth-child(4) .summary-value');
+                if (accuracyCard && data.summary.overall_accuracy) {
+                    accuracyCard.textContent = data.summary.overall_accuracy + '%';
+                }
+            }
+            
+            // Conviction Distribution 업데이트
+            if (data.sectors || data.summary) {
+                updateConvictionDistribution(data);
+            }
+            
+            // 섹터별 데이터를 전역 변수에 저장
+            if (data.sectors) {
+                window.jsonSectorData = {};
+                data.sectors.forEach(sector => {
+                    window.jsonSectorData[sector.id] = {
+                        name: sector.name_en,
+                        nameKo: sector.name_kr,
+                        score: sector.ai_score,
+                        change: sector.score_change >= 0 ? `+${sector.score_change}` : `${sector.score_change}`,
+                        sentiment: sector.sentiment_score,
+                        fundamental: sector.fundamental_score,
+                        signal: sector.signal,
+                        stdDev: sector.std_dev,
+                        accuracy: sector.model_accuracy.percentage,
+                        perf1d: formatPerf(sector.performance['1d']),
+                        perf1w: formatPerf(sector.performance['1w']),
+                        perf1m: formatPerf(sector.performance['1m']),
+                        perfYtd: formatPerf(sector.performance.ytd),
+                        aiSummary: sector.ai_summary.bullets.map(b => `✓ <strong>${b.split(':')[0]}:</strong> ${b.split(':')[1] || ''}`).concat(
+                            sector.ai_summary.risks.map(r => `⚠ <strong>리스크:</strong> ${r}`)
+                        ),
+                        chartData: sector.chart_data['30d']
+                    };
+                });
+                
+                // 섹터 테이블 업데이트
+                updateSectorTableFromJSON(data.sectors);
+                
+                // 첫 번째 섹터로 차트 초기화 (보통 반도체)
+                if (data.sectors.length > 0) {
+                    const firstSector = data.sectors[0].id;
+                    if (window.jsonSectorData[firstSector]) {
+                        createSectorChartFromJSON(firstSector);
+                        updateSectorDetailsFromJSON(firstSector);
+                    }
+                }
+            }
+        }
+        
+        // Conviction Distribution 차트 업데이트 함수
+        function updateConvictionDistribution(data) {
+            // JSON summary에서 직접 가져오기
+            if (data && data.summary) {
+                const summary = data.summary;
+                const analyzedTotal = summary.analyzed_sectors || 15;
+                
+                // 각 카테고리 개수
+                const distribution = {
+                    strongBuy: summary.strong_buy_count || 0,
+                    buy: summary.buy_count || 0,
+                    neutral: summary.neutral_count || 0,
+                    caution: summary.caution_count || 0,
+                    avoid: summary.avoid_count || 0
+                };
+                
+                // 퍼센트 계산 (analyzed_sectors 기준)
+                const percentages = {
+                    strongBuy: ((distribution.strongBuy / analyzedTotal) * 100).toFixed(1),
+                    buy: ((distribution.buy / analyzedTotal) * 100).toFixed(1),
+                    neutral: ((distribution.neutral / analyzedTotal) * 100).toFixed(1),
+                    caution: ((distribution.caution / analyzedTotal) * 100).toFixed(1),
+                    avoid: ((distribution.avoid / analyzedTotal) * 100).toFixed(1)
+                };
+                
+                // 바 차트 업데이트
+                const barContainer = document.getElementById('convictionBarContainer');
+                if (barContainer) {
+                    barContainer.innerHTML = `
+                        <div class="bar-segment strong-buy" style="width: ${percentages.strongBuy}%;">${percentages.strongBuy}%</div>
+                        <div class="bar-segment buy" style="width: ${percentages.buy}%;">${percentages.buy}%</div>
+                        <div class="bar-segment neutral" style="width: ${percentages.neutral}%;">${percentages.neutral}%</div>
+                        <div class="bar-segment sell" style="width: ${percentages.caution}%;">${percentages.caution}%</div>
+                        <div class="bar-segment strong-sell" style="width: ${percentages.avoid}%;">${percentages.avoid}%</div>
+                    `;
+                }
+                
+                // Legend 카운트 업데이트
+                const strongBuyLegend = document.getElementById('strongBuyLegend');
+                const buyLegend = document.getElementById('buyLegend');
+                const neutralLegend = document.getElementById('neutralLegend');
+                const cautionLegend = document.getElementById('cautionLegend');
+                const avoidLegend = document.getElementById('avoidLegend');
+                
+                if (strongBuyLegend) strongBuyLegend.textContent = `(${distribution.strongBuy} sector${distribution.strongBuy !== 1 ? 's' : ''})`;
+                if (buyLegend) buyLegend.textContent = `(${distribution.buy} sector${distribution.buy !== 1 ? 's' : ''})`;
+                if (neutralLegend) neutralLegend.textContent = `(${distribution.neutral} sector${distribution.neutral !== 1 ? 's' : ''})`;
+                if (cautionLegend) cautionLegend.textContent = `(${distribution.caution} sector${distribution.caution !== 1 ? 's' : ''})`;
+                if (avoidLegend) avoidLegend.textContent = `(${distribution.avoid} sector${distribution.avoid !== 1 ? 's' : ''})`;
+                
+                // 하단 요약 텍스트 업데이트
+                const infoText = document.getElementById('analysisInfoText');
+                if (infoText) {
+                    infoText.innerHTML = `오늘 <span class="info-highlight">${analyzedTotal}개 섹터 분석</span> / 전체 ${summary.total_sectors}개 중`;
+                }
+            }
+        }
+        
+        // 성과 포맷 함수
+        function formatPerf(value) {
+            if (value === null || value === undefined) return 'N/A';
+            const sign = value >= 0 ? '+' : '';
+            return `${sign}${value.toFixed(1)}%`;
+        }
+        
+        // 섹터 테이블을 JSON 데이터로 업데이트
+        function updateSectorTableFromJSON(sectors) {
+            const tbody = document.getElementById('sectorTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            // AI Score로 정렬
+            const sortedSectors = sectors.sort((a, b) => b.ai_score - a.ai_score);
+            
+            sortedSectors.forEach(sector => {
+                const tr = document.createElement('tr');
+                
+                const signal = getSignal(sector.ai_score);
+                const convictionLabel = sector.ai_score >= 8 ? 'High' : sector.ai_score >= 6 ? 'Med' : 'Low';
+                
+                // 신뢰도 등급
+                let reliabilityClass = '';
+                let reliabilityLabel = '';
+                
+                // std_dev 대신 직접 문자열 사용 (High/Medium/Low)
+                if (typeof sector.std_dev === 'string') {
+                    // JSON에서 직접 "High", "Medium", "Low" 문자열로 들어올 때
+                    reliabilityLabel = sector.std_dev;
+                    if (reliabilityLabel === 'High') {
+                        reliabilityClass = 'reliability-high';
+                    } else if (reliabilityLabel === 'Medium') {
+                        reliabilityClass = 'reliability-medium';
+                    } else if (reliabilityLabel === 'Low') {
+                        reliabilityClass = 'reliability-low';
+                    }
+                } else if (typeof sector.std_dev === 'number') {
+                    // 하위 호환성: 숫자로 들어올 때
+                    if (sector.std_dev <= 0.3) {
+                        reliabilityClass = 'reliability-high';
+                        reliabilityLabel = 'High';
+                    } else if (sector.std_dev <= 0.6) {
+                        reliabilityClass = 'reliability-medium';
+                        reliabilityLabel = 'Medium';
+                    } else {
+                        reliabilityClass = 'reliability-low';
+                        reliabilityLabel = 'Low';
+                    }
+                } else {
+                    // 값이 없을 때 기본값
+                    reliabilityClass = 'reliability-medium';
+                    reliabilityLabel = 'Medium';
+                }
+                
+                tr.innerHTML = `
+                    <td class="sector-cell">
+                        <strong>${sector.name_en}</strong>
+                        <span class="sector-code">${sector.name_kr}</span>
+                    </td>
+                    <td class="center">
+                        <div class="ai-conviction">
+                            <div class="conviction-value">${sector.ai_score.toFixed(1)}</div>
+                            <div class="conviction-bar">
+                                <div class="conviction-fill" style="width: ${sector.ai_score * 10}%"></div>
+                            </div>
+                            <div class="conviction-label">${convictionLabel}</div>
+                        </div>
+                    </td>
+                    <td class="center">
+                        <div class="reliability-indicator ${reliabilityClass}">
+                            <div class="reliability-badge">${reliabilityLabel}</div>
+                        </div>
+                    </td>
+                    <td class="center">
+                        <span class="signal-badge ${signal.class}">${signal.text}</span>
+                    </td>
+                    <td class="center">
+                        <div class="ai-accuracy">
+                            <div class="accuracy-main">${sector.model_accuracy.percentage}%</div>
+                            <div class="accuracy-detail">
+                                <span class="accuracy-positive">✓ ${sector.model_accuracy.correct_predictions}</span> / ${sector.model_accuracy.total_predictions}
+                            </div>
+                            <div class="accuracy-label">at this level</div>
+                        </div>
+                    </td>
+                    <td class="right ${sector.performance['1d'] >= 0 ? 'perf-positive' : 'perf-negative'}">
+                        ${formatPerf(sector.performance['1d'])}
+                    </td>
+                    <td class="right ${sector.performance['1w'] >= 0 ? 'perf-positive' : 'perf-negative'}">
+                        ${formatPerf(sector.performance['1w'])}
+                    </td>
+                    <td class="right ${sector.performance['1m'] >= 0 ? 'perf-positive' : 'perf-negative'}">
+                        ${formatPerf(sector.performance['1m'])}
+                    </td>
+                    <td class="right ${sector.performance.ytd >= 0 ? 'perf-positive' : 'perf-negative'}">
+                        <strong>${formatPerf(sector.performance.ytd)}</strong>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+            
+            // 테이블 제목 업데이트
+            document.getElementById('sectorTableTitle').textContent = 
+                `Complete Sector Analysis (${sortedSectors.length} Sectors)`;
+        }
+        
+        // 섹터 선택시 업데이트
+        function updateSectorChart() {
+            const sector = document.getElementById('sectorSelect').value;
+            currentSector = sector;
+            
+            // JSON 데이터가 있으면 우선 사용
+            if (window.jsonSectorData && window.jsonSectorData[sector]) {
+                createSectorChartFromJSON(sector);
+                updateSectorDetailsFromJSON(sector);
+            } else {
+                // 기존 함수 사용
+                createSectorChart(sector, currentPeriod);
+                updateSectorDetails(sector);
+            }
+        }
+        
+        // JSON 데이터로 차트 생성
+        function createSectorChartFromJSON(sector) {
+            const sectorInfo = window.jsonSectorData[sector];
+            if (!sectorInfo || !sectorInfo.chartData) return;
+            
+            const ctx = document.getElementById('trendChart');
+            if (!ctx) return;
+            
+            // 기존 차트 제거
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const dates = sectorInfo.chartData.map(d => d.date);
+            const scores = sectorInfo.chartData.map(d => d.score);
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates.map(d => {
+                        const date = new Date(d);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }),
+                    datasets: [{
+                        label: 'AI Score',
+                        data: scores,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#3B82F6',
+                        pointBorderColor: '#1F2937',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1F2937',
+                            borderColor: '#3B82F6',
+                            borderWidth: 1,
+                            padding: 12,
+                            titleColor: '#F9FAFB',
+                            bodyColor: '#E5E7EB',
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `AI Score: ${context.parsed.y.toFixed(1)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 10,
+                            ticks: {
+                                stepSize: 1,
+                                color: '#9CA3AF',
+                                font: { size: 12, family: 'Inter', weight: '600' }
+                            },
+                            grid: { color: '#374151' },
+                            border: { color: '#4B5563' }
+                        },
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 10,
+                                color: '#6B7280',
+                                font: { size: 11, family: 'Inter' }
+                            },
+                            grid: { color: '#2D3748' },
+                            border: { color: '#4B5563' }
+                        }
+                    }
+                }
+            });
+            
+            // 차트 메타 정보 업데이트
+            document.getElementById('currentScore').textContent = sectorInfo.score.toFixed(1);
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // JSON 데이터로 섹터 상세 정보 업데이트
+        function updateSectorDetailsFromJSON(sector) {
+            const details = window.jsonSectorData[sector];
+            if (!details) return;
+            
+            // 모든 UI 요소 업데이트
+            document.getElementById('sectorDetailTitle').textContent = details.name;
+            document.getElementById('detailScore').textContent = details.score.toFixed(1);
+            document.getElementById('detailChange').textContent = details.change;
+            document.getElementById('detailChange').style.color = details.change.startsWith('+') ? '#10B981' : '#EF4444';
+            document.getElementById('detailSentiment').textContent = details.sentiment.toFixed(1);
+            document.getElementById('detailFundamental').textContent = details.fundamental.toFixed(1);
+            
+            // 시그널 배지 업데이트
+            const signalElement = document.getElementById('detailSignal');
+            let signalClass = 'signal-neutral';
+            if (details.signal === 'Strong Buy') signalClass = 'signal-strong-buy';
+            else if (details.signal === 'Buy') signalClass = 'signal-buy';
+            else if (details.signal === 'Avoid') signalClass = 'signal-avoid';
+            
+            signalElement.innerHTML = `<span class="signal-badge ${signalClass}">${details.signal}</span>`;
+            
+            // AI 분석 요약 업데이트
+            const aiSummaryElement = document.getElementById('aiSummaryBullets');
+            if (aiSummaryElement && details.aiSummary) {
+                aiSummaryElement.innerHTML = details.aiSummary
+                    .map(item => {
+                        const isRisk = item.includes('⚠');
+                        return `<li${isRisk ? ' class="reasoning-risk"' : ''}>${item}</li>`;
+                    })
+                    .join('');
+            }
+            
+            // 성과 지표 업데이트
+            const perfRows = document.querySelectorAll('.insight-row');
+            if (perfRows.length >= 4) {
+                perfRows[0].querySelector('.insight-value').textContent = details.perf1d;
+                perfRows[0].querySelector('.insight-value').className = details.perf1d.startsWith('+') ? 'insight-value positive' : 'insight-value negative';
+                
+                perfRows[1].querySelector('.insight-value').textContent = details.perf1w;
+                perfRows[1].querySelector('.insight-value').className = details.perf1w.startsWith('+') ? 'insight-value positive' : 'insight-value negative';
+                
+                perfRows[2].querySelector('.insight-value').textContent = details.perf1m;
+                perfRows[2].querySelector('.insight-value').className = details.perf1m.startsWith('+') ? 'insight-value positive' : 'insight-value negative';
+                
+                perfRows[3].querySelector('.insight-value').innerHTML = `<strong>${details.perfYtd}</strong>`;
+                perfRows[3].querySelector('.insight-value').className = details.perfYtd.startsWith('+') ? 'insight-value positive' : 'insight-value negative';
+            }
+        }
+        
+        // 섹터 상세 정보 업데이트 (기존 함수)
+        function updateSectorDetails(sector) {
+            // 기존 코드 유지...
+        }
+        
         window.addEventListener('load', () => {
-            findLatestDataDate();
+            // JSON 파일 로드 시도
+            loadTodayData();
+            
+            // 기본 차트 생성 (findLatestDataDate 제거 - loadTodayData가 날짜 처리함)
+            // findLatestDataDate();  // 이 함수는 다른 폴더의 파일을 찾으므로 주석처리
             createSectorChart('semiconductors', '30d');
-            // 가장 최근 날짜의 섹터 데이터 로드
-            const dateStr = '2025-10-31'; // 생성된 JSON 파일 중 최신 날짜
-            loadSectorTable(dateStr);
+            // loadSectorTable('2025-10-31');  // 이것도 필요없음
         });
     </script>
 </body>
